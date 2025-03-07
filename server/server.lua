@@ -1,3 +1,4 @@
+local ESX = exports['es_extended']:getSharedObject()
 -- Debug print function
 local function DebugPrint(...)
     if Config.Debug then
@@ -84,8 +85,9 @@ local function DebugPrint(...)
     return hasLicense
   end)
   
-  -- Event handler for when a player submits a test
-  RegisterNUICallback('submitTest', function(data, cb)
+  -- Event to handle test submission from client
+  RegisterNetEvent('hcyk_weapontests:server:submitTest')
+  AddEventHandler('hcyk_weapontests:server:submitTest', function(data)
     local src = source
     local xPlayer = ESX.GetPlayerFromId(src)
     local passed = data.passed
@@ -94,7 +96,6 @@ local function DebugPrint(...)
     
     if not xPlayer then
       DebugPrint("Error: Player not found: " .. src)
-      cb({})
       return
     end
     
@@ -151,7 +152,6 @@ local function DebugPrint(...)
         local playerMoney = xPlayer.getMoney()
         if playerMoney < Config.LicenseFee then
           TriggerClientEvent('hcyk_weapontests:client:notification', src, "You don't have enough money to pay the license fee ($" .. Config.LicenseFee .. ").", "error", "Weapon License", 3000)
-          cb({})
           return
         end
         
@@ -200,8 +200,6 @@ local function DebugPrint(...)
       
       TriggerClientEvent('hcyk_weapontests:client:notification', src, "You have failed the weapon license test. You can try again later.", "error", "Test Failed", 5000)
     end
-    
-    cb({})
   end)
   
   -- Event to handle test passed
@@ -308,7 +306,7 @@ local function DebugPrint(...)
     if not xPlayer then return end
     
     -- Check if the player is an admin
-    if xPlayer.getGroup() ~= 'admin' then
+    if not Config.AdminGroups[xPlayer.getGroup()] then
       TriggerClientEvent('hcyk_weapontests:client:notification', src, "You don't have permission to use this command.", "error", "Command Error", 3000)
       return
     end
@@ -366,7 +364,7 @@ local function DebugPrint(...)
     local src = source
     local xPlayer = ESX.GetPlayerFromId(src)
     
-    if not xPlayer or xPlayer.getGroup() ~= 'admin' then
+    if not xPlayer or not Config.AdminGroups[xPlayer.getGroup()] then
       TriggerClientEvent('hcyk_weapontests:client:notification', src, "You don't have permission to use this command.", "error", "Command Error", 3000)
       return
     end
@@ -424,4 +422,20 @@ local function DebugPrint(...)
   AddEventHandler('hcyk_weapontests:server:notification', function(message, type, title, timeout)
     local src = source
     TriggerClientEvent('hcyk_weapontests:client:notification', src, message, type, title, timeout)
+  end)
+
+  lib.callback.register('hcyk_weapontests:checkMoney', function(source, amount)
+    local src = source
+    local xPlayer = ESX.GetPlayerFromId(src)
+    local hasMoney = false
+    
+    if not xPlayer then
+      return false
+    end
+    
+    if xPlayer.getMoney() >= amount then
+      hasMoney = true
+    end
+    
+    return hasMoney
   end)

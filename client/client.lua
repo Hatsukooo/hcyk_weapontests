@@ -1,4 +1,3 @@
-local target = exports.ox_target
 local ESX = exports['es_extended']:getSharedObject()
 
 -- Debug function that only prints when Config.Debug is true
@@ -132,14 +131,9 @@ local function CheckWeaponLicense(cb)
 end
 
 function startMain()
-  -- Set up instructor NPC
   SetupInstructorNPC()
-  
-  -- Set up map blip
   SetupMapBlip()
-  
-  -- Set up target zone
-  target:addSphereZone({
+  exports.ox_target:addSphereZone({
     coords = Config.TargetCoords,
     radius = 1.5,
     debug = Config.Debug,
@@ -157,13 +151,13 @@ function startMain()
             else
               -- Check if player has enough money
               if Config.LicenseFee > 0 then
-                ESX.TriggerServerCallback('esx_money:getPlayerMoney', function(money)
-                  if money >= Config.LicenseFee then
+                lib.callback('hcyk_weapontests:checkMoney', false, function(hasMoney)
+                  if hasMoney then
                     OpenWeaponTest()
                   else
-                    Notif("You need $" .. Config.LicenseFee .. " to take the weapon license test.", "error", "Insufficient Funds", 5000)
+                    Notif("You do not have enough money to take the test.", "error", "Insufficient Funds", 5000)
                   end
-                end)
+                end, Config.LicenseFee)
               else
                 OpenWeaponTest()
               end
@@ -177,7 +171,6 @@ function startMain()
   DebugPrint("Created target zone at " .. tostring(Config.TargetCoords))
 end
 
--- NUI Callbacks
 RegisterNUICallback('getQuestions', function(data, cb)
   DebugPrint("NUI requested questions")
   local questions = GetQuestions()
@@ -188,24 +181,24 @@ RegisterNUICallback('submitTest', function(data, cb)
   DebugPrint("Test submitted with score: " .. tostring(data.score) .. ", Passed: " .. tostring(data.passed))
   
   testPassed = data.passed
-  
+
   if data.passed then
     Notif("Congratulations! You passed the weapon license test.", "success", "Test Passed", 5000)
-    
-    TriggerServerEvent('hcyk_weapontests:server:testPassed', data.score)
   else
     local wrongCount = #data.wrongAnswers
     Notif("You failed the test. You had " .. wrongCount .. " incorrect answers. Try again later.", "error", "Test Failed", 5000)
     
-    -- Set cooldown if specified in config
-    if Config.TestSettings.MaxRetries > 0 and Config.TestSettings.CooldownTime > 0 then
+    if Config.TestSettings.CooldownTime > 0 then
       cooldownUntil = GetGameTimer() + (Config.TestSettings.CooldownTime * 60 * 1000)
       DebugPrint("Setting cooldown until: " .. cooldownUntil)
     end
   end
   
+  TriggerServerEvent('hcyk_weapontests:server:submitTest', data)
+  
   cb({})
 end)
+
 
 RegisterNUICallback('hideFrame', function(data, cb)
   CloseWeaponTest()

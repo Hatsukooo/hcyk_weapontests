@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useVisibility } from "../providers/VisibilityProvider";
 import { fetchNui } from "../utils/fetchNui";
-import { debugData } from "../utils/debugData";
 import { isEnvBrowser } from "../utils/misc";
 import "./WeaponTest.css";
 
@@ -36,7 +35,7 @@ interface SelectedAnswers {
 }
 
 const WeaponTest = () => {
-  const { visible } = useVisibility();
+  const { visible, setVisible } = useVisibility();
   const [currentStep, setCurrentStep] = useState<string>("start");
   const [allQuestions, setAllQuestions] = useState<Question[]>([]);
   const [testQuestions, setTestQuestions] = useState<Question[]>([]);
@@ -47,9 +46,8 @@ const WeaponTest = () => {
   const [results, setResults] = useState<TestResults>({ passed: false, score: 0, wrongAnswers: [] });
   const [timeLeft, setTimeLeft] = useState<number>(60);
   const [testStarted, setTestStarted] = useState<boolean>(false);
-  const questionCount = 10; // Number of questions to include in each test
+  const questionCount = 10; 
 
-  // Helper to select random questions
   const selectRandomQuestions = (questions: Question[], count: number): Question[] => {
     if (!questions || questions.length === 0) return [];
     
@@ -285,7 +283,11 @@ const WeaponTest = () => {
   };
 
   const handleRestartTest = () => {
-    setCurrentStep("start");
+    if (isEnvBrowser()) {
+      setVisible(false);
+    } else {
+      fetchNui("hideFrame");
+    }
   };
 
   const getOptionText = (question: Question | undefined, optionKey: string): string => {
@@ -398,91 +400,91 @@ const WeaponTest = () => {
   };
 
   const renderResultsScreen = () => {
-   // Calculate the circle's properties for the progress ring
-   const circleRadius = 90;
-   const circumference = 2 * Math.PI * circleRadius;
-   const progressOffset = circumference - (results.score / 100) * circumference;
-   
-   // Determine color based on score
-   const getScoreColor = () => {
-     if (results.passed) return "#2ecc71"; // Green
-     return "#ef4444"; // Red
-   };
-   
-   return (
-     <div className="results-screen">
-       <h1 className={`results-header ${results.passed ? 'passed' : 'failed'}`}>
-         {results.passed ? 'CONGRATULATIONS! YOU PASSED!' : 'TEST FAILED'}
-       </h1>
-       
-       <div className={`score-display ${results.passed ? 'passed' : 'failed'}`}>
-         <div className="score-circle">
-           <svg width="200" height="200">
-             <circle
-               cx="100"
-               cy="100"
-               r={circleRadius}
-               fill="transparent"
-               stroke="rgba(255,255,255,0.1)"
-               strokeWidth="10"
-             />
-             <circle
-               className="progress-ring__circle"
-               cx="100"
-               cy="100"
-               r={circleRadius}
-               stroke={getScoreColor()}
-               strokeWidth="10"
-               strokeDasharray={circumference}
-               strokeDashoffset={progressOffset}
-               strokeLinecap="round"
-             />
-           </svg>
-           <span className="score-number">{Math.round(results.score)}%</span>
-         </div>
-         <p className="score-text">Your Score</p>
-       </div>
-       
-       {results.passed ? (
-         <div className="success-message">
-           <p>You have successfully completed the Weapon License Test.</p>
-           <p>Your license will be issued shortly.</p>
-         </div>
-       ) : (
-         <div className="failure-message">
-           <p>You didn't pass the test. Review the material and try again.</p>
-           {results.wrongAnswers.length > 0 && (
-             <div className="wrong-answers">
-               <h3>Questions to Review:</h3>
-               <ul>
-                 {results.wrongAnswers.map((item, index) => (
-                   <li key={index}>
-                     <p className="review-question"><strong>{item.question}</strong></p>
-                     <p className="review-answer">
-                       Your answer: {item.userAnswer.toUpperCase()} - {getOptionText(
-                         testQuestions.find(q => q.Question_Label === item.question),
-                         item.userAnswer
-                       )}
-                     </p>
-                     <p className="review-answer correct-answer">
-                       Correct answer: {item.correctAnswer.toUpperCase()} - {getOptionText(
-                         testQuestions.find(q => q.Question_Label === item.question),
-                         item.correctAnswer
-                       )}
-                     </p>
-                   </li>
-                 ))}
-               </ul>
-             </div>
-           )}
-         </div>
-       )}
-       
-       <button className="restart-button" onClick={handleRestartTest}>
-         {results.passed ? 'CLOSE' : 'TRY AGAIN'}
-       </button>
-     </div>
-   );
+    // Calculate the circle's properties for the progress ring
+    const circleRadius = 90;
+    const circumference = 2 * Math.PI * circleRadius;
+    const progressOffset = circumference - (results.score / 100) * circumference;
+    
+    // Determine color based on score
+    const getScoreColor = () => {
+      if (results.passed) return "#2ecc71"; // Green
+      return "#ef4444"; // Red
+    };
+    
+    return (
+      <div className="results-screen">
+        <h1 className={`results-header ${results.passed ? 'passed' : 'failed'}`}>
+          {results.passed ? 'CONGRATULATIONS! YOU PASSED!' : 'TEST FAILED'}
+        </h1>
+        
+        <div className={`score-display ${results.passed ? 'passed' : 'failed'}`}>
+          <div className="score-circle">
+            <svg width="200" height="200">
+              <circle
+                cx="100"
+                cy="100"
+                r={circleRadius}
+                fill="transparent"
+                stroke="rgba(255,255,255,0.1)"
+                strokeWidth="10"
+              />
+              <circle
+                className="progress-ring__circle"
+                cx="100"
+                cy="100"
+                r={circleRadius}
+                stroke={getScoreColor()}
+                strokeWidth="10"
+                strokeDasharray={circumference}
+                strokeDashoffset={progressOffset}
+                strokeLinecap="round"
+              />
+            </svg>
+            <span className="score-number">{Math.round(results.score)}%</span>
+          </div>
+          <p className="score-text">Your Score</p>
+        </div>
+        
+        {results.passed ? (
+          <div className="success-message">
+            <p>You have successfully completed the Weapon License Test.</p>
+            <p>Your license will be issued shortly.</p>
+          </div>
+        ) : (
+          <div className="failure-message">
+            <p>You didn't pass the test. Review the material and try again.</p>
+            {results.wrongAnswers.length > 0 && (
+              <div className="wrong-answers">
+                <h3>Questions to Review:</h3>
+                <ul>
+                  {results.wrongAnswers.map((item, index) => (
+                    <li key={index}>
+                      <p className="review-question"><strong>{item.question}</strong></p>
+                      <p className="review-answer">
+                        Your answer: {item.userAnswer.toUpperCase()} - {getOptionText(
+                          testQuestions.find(q => q.Question_Label === item.question),
+                          item.userAnswer
+                        )}
+                      </p>
+                      <p className="review-answer correct-answer">
+                        Correct answer: {item.correctAnswer.toUpperCase()} - {getOptionText(
+                          testQuestions.find(q => q.Question_Label === item.question),
+                          item.correctAnswer
+                        )}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+        
+        <button className="restart-button" onClick={handleRestartTest}>
+          CLOSE
+        </button>
+      </div>
+    );
   };
 
   // Main render function - the test is now unclosable until finished

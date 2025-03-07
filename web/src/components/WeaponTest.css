@@ -350,6 +350,8 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: var(--border-radius);
   padding: 15px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--secondary-color) rgba(255, 255, 255, 0.1);
 }
 
 .wrong-answers h3 {
@@ -440,4 +442,24 @@ body {
   80%, 100% {
     content: "";
   }
+}
+
+.wrong-answers::-webkit-scrollbar {
+  width: 8px;
+}
+
+.wrong-answers::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.wrong-answers::-webkit-scrollbar-thumb {
+  background-color: var(--secondary-color);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.wrong-answers::-webkit-scrollbar-thumb:hover {
+  background-color: var(--primary-color);
 }

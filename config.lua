@@ -29,8 +29,7 @@ Config.TestSettings = {
     PassingScore = 75, -- Percentage needed to pass the test
     QuestionCount = 10, -- Number of questions to include in each test
     TimePerQuestion = 60, -- Seconds allowed for each question
-    MaxRetries = 0, -- Maximum retries per day (0 = unlimited)
-    CooldownTime = 30, -- Cooldown time in minutes before another attempt (only applies if MaxRetries > 0)
+    CooldownTime = 30, -- Cooldown time in minutes before another attempt
 }
 
 -- License Fee Settings
@@ -48,6 +47,6 @@ Config.Blip = { -- Set to false to disable blip
 -- Permission Settings
 Config.AdminGroups = { -- Groups that can use admin commands
     ["admin"] = true,
-    ["superadmin"] = true,
-    ["mod"] = true
+    ["owner"] = true,
+    ["developer"] = true
 }
