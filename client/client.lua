@@ -1,25 +1,37 @@
-local function toggleNuiFrame(shouldShow)
-  SetNuiFocus(shouldShow, shouldShow)
-  SendReactMessage('setVisible', shouldShow)
+local function DebugPrint(...)
+  if Config.Debug then
+    print("[HCYK_WEAPONTESTS] - "...)
+  end
+end
+if Config.Debug then
+  print("[HCYK_WEAPONTESTS] - "...)
 end
 
-RegisterCommand('show-nui', function()
-  toggleNuiFrame(true)
-  debugPrint('Show NUI frame')
-end)
+function Notif(msg, type, title, timeout)
+  local title = title
+  local timeout = timeout
 
-RegisterNUICallback('hideFrame', function(_, cb)
-  toggleNuiFrame(false)
-  debugPrint('Hide NUI frame')
-  cb({})
-end)
-
-RegisterNUICallback('getClientData', function(data, cb)
-  debugPrint('Data sent by React', json.encode(data))
-
--- Lets send back client coords to the React frame for use
-  local curCoords = GetEntityCoords(PlayerPedId())
-
-  local retData <const> = { x = curCoords.x, y = curCoords.y, z = curCoords.z }
-  cb(retData)
-end)
+  if Config.NotificationType == "esx" then
+      ESX.ShowNotification(msg, true, true)
+  elseif Config.NotificationType == "okok" then
+      exports['okokNotify']:Alert(title, msg, 3000, type)
+  elseif Config.NotificationType == "ox" then
+      if type == "info" then
+          lib.notify({
+              title = title,
+              description = msg,
+              type = 'info',
+              duration = timeout,
+              position = Config.NotifyPosition,
+          })
+      else
+          lib.notify({
+              title = title,
+              description = msg,
+              type = type,
+              duration = timeout,
+              position = Config.NotifyPosition,
+          })
+      end
+  end
+end

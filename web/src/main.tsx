@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { VisibilityProvider } from './providers/VisibilityProvider';
-import App from './components/App';
+import App from './components/weapon_tests';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
