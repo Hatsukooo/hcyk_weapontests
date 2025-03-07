@@ -385,3 +385,221 @@ body {
     content: "";
   }
 }
+
+.error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  font-size: 20px;
+  color: var(--error-color);
+  text-align: center;
+  padding: 2rem;
+  flex-direction: column;
+}
+
+.error:before {
+  content: "⚠️";
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+
+/* Add these to your WeaponTest.css file */
+
+/* Progress Bar Styles */
+.progress-container {
+  width: 100%;
+  height: 6px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  margin-bottom: 15px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: var(--accent-color);
+  transition: width 0.3s ease;
+}
+
+/* Enhanced Question Header */
+.question-header {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.question-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Enhanced Review Section */
+.wrong-answers {
+  text-align: left;
+  margin-top: 20px;
+  max-height: 300px;
+  overflow-y: auto;
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--border-radius);
+  padding: 15px;
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.wrong-answers h3 {
+  margin-bottom: 15px;
+  color: var(--accent-color);
+  font-size: 20px;
+  text-align: center;
+}
+
+.wrong-answers ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.wrong-answers li {
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.wrong-answers li:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.review-question {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.review-answer {
+  font-size: 16px;
+  margin-bottom: 5px;
+}
+
+.correct-answer {
+  color: var(--success-color);
+}
+
+/* Results Screen Enhancements */
+.results-header {
+  font-size: 42px;
+  font-weight: 700;
+  margin-bottom: 30px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.results-header.passed {
+  color: var(--success-color);
+}
+
+.results-header.failed {
+  color: var(--error-color);
+}
+
+.restart-button {
+  font-size: 20px;
+  padding: 14px 45px;
+  letter-spacing: 1.5px;
+}
+
+/* Make the score circle larger and more prominent */
+.score-circle {
+  width: 180px;
+  height: 180px;
+  border-width: 10px;
+}
+
+.score-number {
+  font-size: 50px;
+}
+
+.score-text {
+  font-size: 22px;
+}
+
+/* Enhanced Score Circle with Progress Ring */
+.score-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 30px;
+  position: relative;
+}
+
+.score-circle {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background-color: transparent;
+  position: relative;
+  margin-bottom: 15px;
+}
+
+.score-circle::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 12px solid rgba(255, 255, 255, 0.1);
+  box-sizing: border-box;
+}
+
+.progress-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.progress-ring__circle {
+  fill: transparent;
+  stroke-width: 12px;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  transition: stroke-dashoffset 1s ease-in-out;
+}
+
+.passed .progress-ring__circle {
+  stroke: var(--success-color);
+}
+
+.failed .progress-ring__circle {
+  stroke: var(--error-color);
+}
+
+.score-number {
+  font-size: 60px;
+  font-weight: 700;
+  position: relative;
+  z-index: 2;
+}
+
+.score-text {
+  font-size: 22px;
+  font-weight: 500;
+}
+
+/* Make the test unclosable */
+.test-in-progress {
+  pointer-events: none; /* Disables all interactions */
+}
+
+.test-in-progress .close-button {
+  display: none;
+}

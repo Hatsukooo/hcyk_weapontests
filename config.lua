@@ -19,3 +19,11 @@ Config.Ped = {
 ]]--
 
 Config.MaxWrong = 3 -- Maximum of wrong answears player can get
+Config.Blip = false -- Table or false
+
+--[[
+Config.Blip = {
+    blipsprite = 1, --etc..
+
+}
+]]--
