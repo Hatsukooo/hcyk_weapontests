@@ -1,5 +1,6 @@
-Config = {}
-Config.Debug = true
+Config = {} -- Don't touch this
+Config.Debug = true -- Enable debug messages
+Config.Webhook = "YOUR_WEBHOOK_HERE" -- Discord webhook for logging test results
 
 Config.Notification = {
     type = "ox", -- select default notification | esx, okok, ox
