@@ -1,5 +1,5 @@
 local target = exports.ox_target
-
+local ESX = exports['es_extended']:getSharedObject()
 -- Debug function that only prints when Config.Debug is true
 local function DebugPrint(...)
   if Config.Debug then
@@ -37,23 +37,9 @@ function Notif(msg, type, title, timeout)
   end
 end
 
--- Variables to track test status
 local testActive = false
 local testPassed = false
-local currentTest = nil
 
--- Function to check if player has the weapon license
-local function HasWeaponLicense()
-  -- This would need to be implemented based on your licensing system
-  -- For example with ESX:
-  -- local xPlayer = ESX.GetPlayerData()
-  -- return xPlayer.licenses and xPlayer.licenses["weapon"]
-  
-  -- Placeholder, replace with your actual implementation
-  return false
-end
-
--- Function to open the weapon test UI
 local function OpenWeaponTest()
   SetNuiFocus(true, true)
   SendNUIMessage({
@@ -64,7 +50,6 @@ local function OpenWeaponTest()
   DebugPrint("Weapon test UI opened")
 end
 
--- Function to close the weapon test UI
 local function CloseWeaponTest()
   SetNuiFocus(false, false)
   SendNUIMessage({
@@ -75,16 +60,13 @@ local function CloseWeaponTest()
   DebugPrint("Weapon test UI closed")
 end
 
--- Function to get all questions from the questions.lua file
 local function GetQuestions()
   local questions = require('questions')
   DebugPrint("Loaded " .. #questions .. " questions")
   return questions
 end
 
--- Function to start the main system
 function startmain()
-  -- Create the instructor NPC if configured
   if type(Config.Ped) == "table" and Config.Ped.model ~= "" then
     RequestModel(Config.Ped.model)
     while not HasModelLoaded(Config.Ped.model) do
@@ -95,22 +77,14 @@ function startmain()
     FreezeEntityPosition(ped, true)
     SetEntityInvincible(ped, true)
     SetBlockingOfNonTemporaryEvents(ped, true)
-    
-    -- Add animation if configured
-    if Config.Ped.animDict and Config.Ped.animName then
-      RequestAnimDict(Config.Ped.animDict)
-      while not HasAnimDictLoaded(Config.Ped.animDict) do
-        Wait(100)
-      end
-      TaskPlayAnim(ped, Config.Ped.animDict, Config.Ped.animName, 8.0, -8.0, -1, Config.Ped.animFlag or 1, 0.0, false, false, false)
-    end
+    TaskStartScenarioInPlace(ped, "WORLD_HUMAN_CLIPBOARD", 0, true)
+    SetEntityAsMissionEntity(ped, true, true)    
     
     DebugPrint("Created instructor NPC")
   end
 
-  -- Create the blip if configured
   if type(Config.Blip) == "table" then
-    local blip = AddBlipForCoord(Config.Blip[1], Config.Blip[2], Config.Blip[3])
+    local blip = AddBlipForCoord(Config.TargetCoords)
     SetBlipSprite(blip, Config.Blip.sprite)
     SetBlipDisplay(blip, 4)
     SetBlipScale(blip, Config.Blip.scale)
@@ -122,7 +96,6 @@ function startmain()
     DebugPrint("Created map blip")
   end
 
-  -- Create the target zone
   target:addSphereZone({
     coords = Config.TargetCoords,
     radius = 1.0,
@@ -130,22 +103,18 @@ function startmain()
     drawSprite = true,
     options = {
       {
-        label = "Take Weapon License Test",
+        label = "Take Weapon License Test (Cost: $" .. Config.LicenseFee .. ")",
         icon = "fas fa-gun",
         iconColor = "red",
         distance = 1.5,
         onSelect = function(data)
-          if HasWeaponLicense() then
-            Notif("You already have a weapon license.", "error", "Weapon License", 3000)
-            return
-          end
-          
-          if testPassed then
-            Notif("You've already passed the test. Go to the sheriff's office to collect your license.", "info", "Weapon License", 5000)
-            return
-          end
-          
-          OpenWeaponTest()
+          lib.callback.await('hcyk_weapontests:checkLicense', function(hasLicense)
+              if hasLicense then
+                Notif("You already have a weapon license.", "info", "License Check", 5000)
+              else
+                OpenWeaponTest()
+              end
+            end, "weapon")
         end
       }
     }
@@ -166,12 +135,12 @@ RegisterNUICallback('submitTest', function(data, cb)
   
   testPassed = data.passed
   
-  -- Handle test results
   if data.passed then
     Notif("Congratulations! You passed the weapon license test.", "success", "Test Passed", 5000)
     
-    -- You might want to save this to the database or trigger a server event
-    TriggerServerEvent('hcyk_weapontests:server:testPassed')
+    ESX.TriggerServerCallback('esx_license:addLicense', function()
+      Notif("You have been granted a weapon license.", "success", "License Granted", 5000)
+    end, "weapon")
   else
     local wrongCount = #data.wrongAnswers
     Notif("You failed the test. You had " .. wrongCount .. " incorrect answers. Try again later.", "error", "Test Failed", 5000)
@@ -185,26 +154,26 @@ RegisterNUICallback('hideFrame', function(data, cb)
   cb({})
 end)
 
-Citizen.CreateThread(function()
-  while true do
-    Wait(0)
-    if testActive then
-      DisableControlAction(0, 1, true)
-      DisableControlAction(0, 2, true)
-      DisableControlAction(0, 24, true) 
-      DisableControlAction(0, 25, true) 
-      DisableControlAction(0, 257, true) 
-      DisableControlAction(0, 263, true) 
-      
-      if IsDisabledControlJustReleased(0, 177) then
-      end
-    end
-    if not testActive then
-      Wait(1000)
-    end
-  end
-end)
-
 CreateThread(function()
   startmain()
+  DebugPrint("Weapon test system started")
 end)
+
+RegisterNetEvent('hcyk_weapontests:client:notification')
+AddEventHandler('hcyk_weapontests:client:notification', function(message, type, title, timeout)
+  Notif(message, type, title, timeout)
+end)
+
+-- DEV: Command to force open the test UI (for development)
+if Config.Debug then
+  RegisterCommand('weapontest', function()
+    OpenWeaponTest()
+  end, false)
+  
+  RegisterCommand('checklicense', function()
+    CheckWeaponLicense()
+    Wait(500) -- Give time for the callback
+    local statusText = hasLicense and "You have a weapon license." or "You do not have a weapon license."
+    Notif(statusText, "info", "License Status", 3000)
+  end, false)
+end

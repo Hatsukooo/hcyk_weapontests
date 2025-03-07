@@ -1,1 +1,0 @@
--- insert into user_licences weapon licence
