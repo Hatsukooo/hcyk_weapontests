@@ -1,35 +1,53 @@
 Config = {} -- Don't touch this
-Config.Debug = true -- Enable debug messages
-Config.Webhook = "YOUR_WEBHOOK_HERE" -- Discord webhook for logging test results
 
+-- Debug Settings
+Config.Debug = true -- Enable debug messages in server console
+Config.Webhook = "YOUR_WEBHOOK_HERE" -- Discord webhook for logging test results and admin actions
+
+-- Database settings
+Config.UseDatabase = true -- Whether to store test results in database
+
+-- Notification System
 Config.Notification = {
-    type = "ox", -- select default notification | esx, okok, ox
-    position = "top", -- ox only | https://overextended.dev/ox_lib/Modules/Interface/Client/notify
-    timeout = 2000 -- notification timeout in ms
+    type = "ox", -- Select notification system: "esx", "okok", or "ox"
+    position = "top", -- Position for ox notifications - https://overextended.dev/ox_lib/Modules/Interface/Client/notify
+    timeout = 2000 -- Notification display time in milliseconds
 }
 
+-- NPC Instructor Settings
 Config.Ped = {
-    model = "a_m_y_business_01",
-    location = vector3(21.6585, -1107.6157, 28.7972),
-    heading = 156.6843,
+    model = "a_m_y_business_01", -- Model for instructor NPC
+    location = vector3(21.6585, -1107.6157, 28.7972), -- Position of instructor
+    heading = 156.6843, -- Direction NPC faces
 }
 
-Config.TargetCoords = vec3(21.6585, -1107.6157, 29.7972)
+-- Location and Interaction
+Config.TargetCoords = vec3(21.6585, -1107.6157, 29.7972) -- Target zone location
 
-Config.MaxWrong = 3 -- Maximum of wrong answears player can get
-
-Config.Blip = { --blip is attached to TargetCoords
-    sprite = 134,
-    color = 13,
-    name = "Test",
-    scale = 0.8,
-    short = false,
-} -- Table {} or false
-
+-- Test Settings
 Config.TestSettings = {
     PassingScore = 75, -- Percentage needed to pass the test
     QuestionCount = 10, -- Number of questions to include in each test
     TimePerQuestion = 60, -- Seconds allowed for each question
+    MaxRetries = 0, -- Maximum retries per day (0 = unlimited)
+    CooldownTime = 30, -- Cooldown time in minutes before another attempt (only applies if MaxRetries > 0)
 }
 
+-- License Fee Settings
 Config.LicenseFee = 500 -- Amount to charge for the license after passing the test, set to 0 for free
+
+-- Map Blip Settings
+Config.Blip = { -- Set to false to disable blip
+    sprite = 134, -- Blip sprite (icon)
+    color = 13, -- Blip color
+    name = "Weapon Licensing", -- Blip label on map
+    scale = 0.8, -- Blip size
+    short = false, -- Whether to show on edge of minimap
+}
+
+-- Permission Settings
+Config.AdminGroups = { -- Groups that can use admin commands
+    ["admin"] = true,
+    ["superadmin"] = true,
+    ["mod"] = true
+}

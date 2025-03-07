@@ -1,216 +1,85 @@
-<div align="center">
-    <img href="https://projecterror.dev" width="150" src="https://i.tasoagc.dev/c1pD" alt="Material-UI logo" />
-</div>
-<h1 align="center">FiveM React and Lua Boilerplate</h1>
+# 🎯 HCYK Weapon License Test System
 
-<div align="center">
-A simple and extendable React (TypeScript) boilerplate designed around the Lua ScRT
-</div>
+A comprehensive weapon license testing system for FiveM ESX servers. This resource provides an immersive and interactive UI for players to take weapon license tests, with customizable questions, admin controls, and detailed logging.
 
-<div align="center">
+## ✨ Features
 
-[![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/project-error/pe-utils/master/LICENSE)
-![Discord](https://img.shields.io/discord/791854454760013827?label=Our%20Discord)
-![David](https://img.shields.io/david/project-error/fivem-react-boilerplate-lua)
-[![Dependabot Status](https://api.dependabot.com/badges/status?host=github&repo=project-error/fivem-react-boilerplate-lua)](https://dependabot.com)
-</div>
+- **Interactive Test UI** - Beautiful and responsive user interface for the license exam
+- **Customizable Questions** - Easily add, modify, or remove test questions
+- **Admin Commands** - Grant or revoke licenses with convenient admin commands
+- **Discord Webhooks** - Detailed logging of test results and admin actions
+- **Multiple Notification Systems** - Integration with ESX, okok, and ox_lib notifications
+- **Cooldown System** - Optional cooldown between test attempts
+- **Database Storage** - Track test history and results
 
-This repository is a basic boilerplate for getting started
-with React in NUI. It contains several helpful utilities and
-is bootstrapped using `create-react-app`. It is for both browser
-and in-game based development workflows.
+## 📋 Dependencies
 
-For in-game workflows, Utilizing `craco` to override CRA, we can have hot
-builds that just require a resource restart instead of a full
-production build
+- [ESX](https://github.com/esx-framework/esx-legacy)
+- [ox_lib](https://github.com/overextended/ox_lib)
+- [ox_target](https://github.com/overextended/ox_target)
 
-This version of the boilerplate is meant for the CfxLua runtime.
+## 💾 Installation
 
-## Requirements
-* [Node > v10.6](https://nodejs.org/en/)
-* [Yarn](https://yarnpkg.com/getting-started/install) (Preferred but not required)
-
-*A basic understanding of the modern web development workflow. If you don't 
-know this yet, React might not be for you just yet.*
-
-## Getting Started
-
-First clone the repository or use the template option and place
-it within your `resources` folder
-
-### Installation
-
-*The boilerplate was made using `yarn` but is still compatible with
-`npm`.*
-
-Install dependencies by navigating to the `web` folder within
-a terminal of your choice and type `npm i` or `yarn`.
-
-## Features
-
-This boilerplate comes with some utilities and examples to work off of.
-
-### Lua Utils
-
-**SendReactMessage**
-
-This is a small wrapper for dispatching NUI messages. This is designed
-to be used with the `useNuiEvent` React hook.
-
-Signature
-```lua
----@param action string The action you wish to target
----@param data any The data you wish to send along with this action
-SendReactMessage(action, data)
+1. Download the resource
+2. Place it in your server's resources folder
+3. Add the following to your server.cfg:
 ```
-
-Usage
-```lua
-SendReactMessage('setVisible', true)
+ensure ox_lib
+ensure ox_target
+ensure hcyk_weapontests
 ```
+4. Configure the `config.lua` file to your preferences
+5. Set up your Discord webhook in the config if you want to use the logging features
+6. Restart your server or start the resource
 
-**debugPrint**
+## ⚙️ Configuration
 
-A debug printing utility that is dependent on a convar,
-if the convar is set this will print out to the console.
+All configuration options are available in the `config.lua` file:
 
-The convar is dependent on the name given to the resource.
-It follows this format `YOUR_RESOURCE_NAME-debugMode`
+- Set the license fee
+- Configure test parameters (passing score, question count, time limits)
+- Customize NPC location and appearance
+- Set up map blips
+- Configure Discord webhook logging
+- Set notification preferences
+- Enable/disable cooldown periods
 
-To turn on debugMode add `setr YOUR_RESOURCE_NAME-debugMode 1` to 
-your server.cfg or use the `setr` console command instead.
+## 📝 Admin Commands
 
-Signature (Replicates `print`)
-```lua
----@param ... any[] The arguments you wish to send
-debugPrint(...)
-```
+- `/grantlicense [playerId]` - Grant a weapon license to a player
+- `/resetlicense [playerId]` - Revoke a weapon license from a player
+- `/checklicense` - Check your own license status
 
-Usage
-```lua
-debugPrint('wow cool string to print', true, someOtherVar)
-```
+Developer commands (debug mode only):
+- `/weapontest` - Force open the test UI
+- `/resetcooldown` - Reset the test cooldown timer
 
-### React Utils
+## 📊 Webhook Logging
 
-Signatures are not included for these utilities as the type definitions
-are sufficient enough.
+The resource logs the following events to your Discord webhook:
+- Test completions (passed/failed)
+- License grants by admins
+- License revocations by admins
+- Including player identifiers, scores, and incorrect answers
 
-**useNuiEvent**
+## 🎨 UI Customization
 
-This is a custom React hook that is designed to intercept and handle
-messages dispatched by the game scripts. This is the primary
-way of creating passive listeners.
+The UI is built with React and can be easily customized by modifying the files in the `web/src` directory. After making changes, run:
 
-
-*Note: For now handlers can only be registered a single time. I haven't
-come across a personal usecase for a cascading event system*
-
-**Usage**
-```jsx
-const MyComp: React.FC = () => {
-  const [state, setState] = useState('')
-  
-  useNuiEvent<string>('myAction', (data) => {
-    // the first argument to the handler function
-    // is the data argument sent using SendReactMessage
-    
-    // do whatever logic u want here
-    setState(data)
-  })
-  
-  return(
-    <div>
-      <h1>Some component</h1>
-      <p>{state}</p>
-    </div>
-  )
-}
-
-```
-
-**fetchNui**
-
-This is a simple NUI focused wrapper around the standard `fetch` API.
-This is the main way to accomplish active NUI data fetching 
-or to trigger NUI callbacks in the game scripts.
-
-When using this, you must always at least callback using `{}`
-in the gamescripts.
-
-*This can be heavily customized to your use case*
-
-**Usage**
-```ts
-// First argument is the callback event name. 
-fetchNui<ReturnData>('getClientData').then(retData => {
-  console.log('Got return data from client scripts:')
-  console.dir(retData)
-  setClientData(retData)
-}).catch(e => {
-  console.error('Setting mock data due to error', e)
-  setClientData({ x: 500, y: 300, z: 200})
-})
-```
-
-**debugData**
-
-This is a function allowing for mocking dispatched game script
-actions in a browser environment. It will trigger `useNuiEvent` handlers
-as if they were dispatched by the game scripts. **It will only fire if the current
-environment is a regular browser and not CEF**
-
-**Usage**
-```ts
-// This will target the useNuiEvent hooks registered with `setVisible`
-// and pass them the data of `true`
-debugData([
-  {
-    action: 'setVisible',
-    data: true,
-  }
-])
-```
-
-**Misc Utils**
-
-These are small but useful included utilities.
-
-* `isEnvBrowser()` - Will return a boolean indicating if the current 
-  environment is a regular browser. (Useful for logic in development)
-
-## Development Workflow
-
-This boilerplate was designed with development workflow in mind.
-It includes some helpful scripts to accomplish that.
-
-**Hot Builds In-Game**
-
-When developing in-game, you can use the hot build system by
-running the `start:game` script. This is essentially the start
-script but it writes to disk. Meaning all that is required is a
-resource restart to update the game script
-
-**Usage**
-```sh
-# yarn
-yarn start:game
-# npm
-npm run start:game
-```
-
-**Production Builds**
-
-When you are done with development phase for your resource. You
-must create a production build that is optimized and minimized.
-
-You can do this by running the following:
-
-```sh
+```bash
+cd web
+npm install
 npm run build
-yarn build 
 ```
 
-## Additional Notes
+## 🤝 Support
 
-Need further support? Join our [Discord](https://discord.com/invite/HYwBjTbAY5)!
+For issues, feature requests, or support, please open an issue on the GitHub repository or contact the author on Discord.
+
+## 📜 License
+
+This resource is released under the MIT License. See the LICENSE file for details.
+
+---
+
+Created by Hatcyk | [GitHub](https://github.com/hatcyk)

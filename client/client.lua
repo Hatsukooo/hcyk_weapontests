@@ -1,5 +1,6 @@
 local target = exports.ox_target
 local ESX = exports['es_extended']:getSharedObject()
+
 -- Debug function that only prints when Config.Debug is true
 local function DebugPrint(...)
   if Config.Debug then
@@ -13,7 +14,7 @@ function Notif(msg, type, title, timeout)
   local timeout = timeout or Config.Notification.timeout
 
   if Config.Notification.type == "esx" then
-    ESX.ShowNotification(msg, true, true)
+    ESX.ShowNotification(msg, true, false, type)
   elseif Config.Notification.type == "okok" then
     exports['okokNotify']:Alert(title, msg, timeout, type)
   elseif Config.Notification.type == "ox" then
@@ -39,8 +40,20 @@ end
 
 local testActive = false
 local testPassed = false
+local cooldownUntil = 0
 
 local function OpenWeaponTest()
+  -- Check for cooldown
+  if cooldownUntil > 0 and GetGameTimer() < cooldownUntil then
+    local remainingSeconds = math.ceil((cooldownUntil - GetGameTimer()) / 1000)
+    local minutes = math.floor(remainingSeconds / 60)
+    local seconds = remainingSeconds % 60
+    local timeString = string.format("%02d:%02d", minutes, seconds)
+    
+    Notif("You must wait " .. timeString .. " before taking the test again.", "error", "Cooldown Active", 5000)
+    return
+  end
+  
   SetNuiFocus(true, true)
   SendNUIMessage({
     action = "setVisible",
@@ -66,23 +79,36 @@ local function GetQuestions()
   return questions
 end
 
-function startmain()
+local function SetupInstructorNPC()
   if type(Config.Ped) == "table" and Config.Ped.model ~= "" then
-    RequestModel(Config.Ped.model)
-    while not HasModelLoaded(Config.Ped.model) do
+    -- Check if model is a string or a hash
+    local modelHash = type(Config.Ped.model) == "string" and GetHashKey(Config.Ped.model) or Config.Ped.model
+    
+    -- Request the model
+    RequestModel(modelHash)
+    local timeout = GetGameTimer() + 10000 -- 10 second timeout
+    
+    -- Wait for model to load with timeout
+    while not HasModelLoaded(modelHash) and GetGameTimer() < timeout do
       Wait(100)
     end
-
-    local ped = CreatePed(0, Config.Ped.model, Config.Ped.location, Config.Ped.heading, false, true)
-    FreezeEntityPosition(ped, true)
-    SetEntityInvincible(ped, true)
-    SetBlockingOfNonTemporaryEvents(ped, true)
-    TaskStartScenarioInPlace(ped, "WORLD_HUMAN_CLIPBOARD", 0, true)
-    SetEntityAsMissionEntity(ped, true, true)    
     
-    DebugPrint("Created instructor NPC")
+    if HasModelLoaded(modelHash) then
+      local ped = CreatePed(0, modelHash, Config.Ped.location, Config.Ped.heading, false, true)
+      FreezeEntityPosition(ped, true)
+      SetEntityInvincible(ped, true)
+      SetBlockingOfNonTemporaryEvents(ped, true)
+      TaskStartScenarioInPlace(ped, "WORLD_HUMAN_CLIPBOARD", 0, true)
+      SetEntityAsMissionEntity(ped, true, true)    
+      
+      DebugPrint("Created instructor NPC")
+    else
+      DebugPrint("Failed to load NPC model: " .. Config.Ped.model)
+    end
   end
+end
 
+local function SetupMapBlip()
   if type(Config.Blip) == "table" then
     local blip = AddBlipForCoord(Config.TargetCoords)
     SetBlipSprite(blip, Config.Blip.sprite)
@@ -95,10 +121,27 @@ function startmain()
     EndTextCommandSetBlipName(blip)
     DebugPrint("Created map blip")
   end
+end
 
+local function CheckWeaponLicense(cb)
+  lib.callback('hcyk_weapontests:checkLicense', false, function(hasLicense)
+    if cb then
+      cb(hasLicense)
+    end
+  end, "weapon")
+end
+
+function startMain()
+  -- Set up instructor NPC
+  SetupInstructorNPC()
+  
+  -- Set up map blip
+  SetupMapBlip()
+  
+  -- Set up target zone
   target:addSphereZone({
     coords = Config.TargetCoords,
-    radius = 1.0,
+    radius = 1.5,
     debug = Config.Debug,
     drawSprite = true,
     options = {
@@ -106,15 +149,26 @@ function startmain()
         label = "Take Weapon License Test (Cost: $" .. Config.LicenseFee .. ")",
         icon = "fas fa-gun",
         iconColor = "red",
-        distance = 1.5,
+        distance = 2.0,
         onSelect = function(data)
-          lib.callback.await('hcyk_weapontests:checkLicense', function(hasLicense)
-              if hasLicense then
-                Notif("You already have a weapon license.", "info", "License Check", 5000)
+          CheckWeaponLicense(function(hasLicense)
+            if hasLicense then
+              Notif("You already have a weapon license.", "info", "License Check", 5000)
+            else
+              -- Check if player has enough money
+              if Config.LicenseFee > 0 then
+                ESX.TriggerServerCallback('esx_money:getPlayerMoney', function(money)
+                  if money >= Config.LicenseFee then
+                    OpenWeaponTest()
+                  else
+                    Notif("You need $" .. Config.LicenseFee .. " to take the weapon license test.", "error", "Insufficient Funds", 5000)
+                  end
+                end)
               else
                 OpenWeaponTest()
               end
-            end, "weapon")
+            end
+          end)
         end
       }
     }
@@ -138,12 +192,16 @@ RegisterNUICallback('submitTest', function(data, cb)
   if data.passed then
     Notif("Congratulations! You passed the weapon license test.", "success", "Test Passed", 5000)
     
-    ESX.TriggerServerCallback('esx_license:addLicense', function()
-      Notif("You have been granted a weapon license.", "success", "License Granted", 5000)
-    end, "weapon")
+    TriggerServerEvent('hcyk_weapontests:server:testPassed', data.score)
   else
     local wrongCount = #data.wrongAnswers
     Notif("You failed the test. You had " .. wrongCount .. " incorrect answers. Try again later.", "error", "Test Failed", 5000)
+    
+    -- Set cooldown if specified in config
+    if Config.TestSettings.MaxRetries > 0 and Config.TestSettings.CooldownTime > 0 then
+      cooldownUntil = GetGameTimer() + (Config.TestSettings.CooldownTime * 60 * 1000)
+      DebugPrint("Setting cooldown until: " .. cooldownUntil)
+    end
   end
   
   cb({})
@@ -155,13 +213,18 @@ RegisterNUICallback('hideFrame', function(data, cb)
 end)
 
 CreateThread(function()
-  startmain()
+  startMain()
   DebugPrint("Weapon test system started")
 end)
 
 RegisterNetEvent('hcyk_weapontests:client:notification')
 AddEventHandler('hcyk_weapontests:client:notification', function(message, type, title, timeout)
   Notif(message, type, title, timeout)
+end)
+
+RegisterNetEvent('hcyk_weapontests:client:licenseGranted')
+AddEventHandler('hcyk_weapontests:client:licenseGranted', function()
+  Notif("You have been granted a weapon license.", "success", "License Granted", 5000)
 end)
 
 -- DEV: Command to force open the test UI (for development)
@@ -171,9 +234,15 @@ if Config.Debug then
   end, false)
   
   RegisterCommand('checklicense', function()
-    CheckWeaponLicense()
-    Wait(500) -- Give time for the callback
-    local statusText = hasLicense and "You have a weapon license." or "You do not have a weapon license."
-    Notif(statusText, "info", "License Status", 3000)
+    CheckWeaponLicense(function(hasLicense)
+      local statusText = hasLicense and "You have a weapon license." or "You do not have a weapon license."
+      Notif(statusText, "info", "License Status", 3000)
+    end)
+  end, false)
+  
+  -- Reset cooldown command (for testing)
+  RegisterCommand('resetcooldown', function()
+    cooldownUntil = 0
+    Notif("Cooldown timer has been reset.", "success", "Debug Command", 3000)
   end, false)
 end
