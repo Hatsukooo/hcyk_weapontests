@@ -18,4 +18,4 @@ Config.Ped = {
 }
 ]]--
 
-Config.MaxWrong = 3
+Config.MaxWrong = 3 -- Maximum of wrong answears player can get
