@@ -68,9 +68,10 @@ The UI is built with React and can be easily customized by modifying the files i
 
 ```bash
 cd web
-npm install
-npm run build
+pnpm i
+pnpm build
 ```
+If you want to see what you change in the source `pnpm start`
 
 ## 🤝 Support
 
